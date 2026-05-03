@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ôn Tập Hóa 12 - Full 35 Câu</title>
+    <style>
+        :root { --primary-color: #1a73e8; --success-color: #28a745; --danger-color: #dc3545; --bg-color: #f8f9fa; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); line-height: 1.6; user-select: none; }
+        header { position: fixed; top: 0; width: 100%; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; padding: 10px 0; }
+        .header-container { max-width: 600px; margin: 0 auto; padding: 0 15px; display: flex; justify-content: space-between; align-items: center; }
+        #timer { font-weight: bold; font-size: 1.2rem; color: var(--danger-color); }
+        .progress-container { width: 100%; height: 8px; background: #eee; position: absolute; bottom: 0; }
+        #progress-bar { height: 100%; background: var(--primary-color); width: 0%; transition: width 0.3s; }
+        main { max-width: 600px; margin: 80px auto 100px; padding: 15px; }
+        .question-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #eee; }
+        .question-text { font-weight: 600; margin-bottom: 15px; display: block; color: #202124; }
+        .option-item { margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; padding: 12px; cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
+        .option-item:active { background: #f1f3f4; }
+        .option-item input { margin-right: 12px; transform: scale(1.2); }
+        .true-false-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .true-false-table th, .true-false-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        .footer-nav { position: fixed; bottom: 0; width: 100%; background: white; padding: 15px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); text-align: center; }
+        button { background: var(--primary-color); color: white; border: none; padding: 12px 40px; border-radius: 25px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .result-box { display: none; text-align: center; padding: 20px; background: #e8f0fe; border-radius: 12px; margin-bottom: 20px; border: 2px solid var(--primary-color); }
+        .correct { background-color: #d4edda !important; border-color: #28a745 !important; }
+        .wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; }
+        .feedback { font-size: 0.9rem; margin-top: 10px; font-weight: bold; padding: 8px; border-radius: 5px; }
+        .wrong-text { color: var(--danger-color); background: #fff5f5; }
+        .correct-text { color: var(--success-color); background: #f6fff8; }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-container"><span>Ôn tập Hóa 12 (Full 35 Câu)</span><div id="timer">45:00</div></div>
+    <div class="progress-container"><div id="progress-bar"></div></div>
+</header>
+<main id="quiz-container">
+    <div id="result-display" class="result-box"><h2>Kết quả: <span id="score">0</span>/10</h2><button onclick="location.reload()">Làm lại bài mới</button></div>
+    <div id="questions"></div>
+</main>
+<div class="footer-nav"><button id="submit-btn" onclick="submitQuiz()">Nộp bài</button></div>
+
+<script>
+const rawData = [
+    { type: 'single', q: 'Câu 1: Số kim loại trong dãy (Fe, Na, K, Cu, Li) tác dụng với nước ở nhiệt độ thường là:', options: ['3', '1', '2', '4'], answer: '3' },
+    { type: 'single', q: 'Câu 2: Để bảo quản kim loại kiềm lâu dài, người ta ngâm chúng trong:', options: ['Ethyl alcohol', 'Dầu hỏa', 'Giấm ăn', 'Nước máy'], answer: 'Dầu hỏa' },
+    { type: 'single', q: 'Câu 3: Bán phản ứng xảy ra ở anode của pin quả chanh (Zn-Cu) là:', options: ['Zn2+ + 2e -> Zn', 'Cu2+ + 2e -> Cu', 'Zn -> Zn2+ + 2e', 'Cu -> Cu2+ + 2e'], answer: 'Zn -> Zn2+ + 2e' },
+    { type: 'single', q: 'Câu 4: Liên kết kim loại hình thành do lực hút tĩnh điện giữa các ion... với các electron...', options: ['ngoài cùng, dương', 'dương, tự do', 'hóa trị, lưỡng cực', 'hóa trị, âm'], answer: 'dương, tự do' },
+    { type: 'single', q: 'Câu 5: Số phát biểu đúng về pin mặt trời: (a) Phụ thuộc thời tiết. (b) Biến đổi quang năng thành điện năng. (c) Là nguồn năng lượng sạch. (d) Làm Trái Đất nóng lên.', options: ['2', '4', '3', '1'], answer: '3' },
+    { type: 'single', q: 'Câu 6: Nước cứng là nước chứa nhiều ion:', options: ['Na+, K+', 'Mg2+, Ca2+', 'SO4 2-, CO3 2-', 'F-, Cl-'], answer: 'Mg2+, Ca2+' },
+    { type: 'single', q: 'Câu 7: Chất có thể làm mềm nước cứng chứa Na+, Ca2+, HCO3-, Cl-, SO4 2- là:', options: ['HCl', 'Ca(OH)2', 'Na2CO3', 'NaOH'], answer: 'Na2CO3' },
+    { type: 'single', q: 'Câu 8: Ion có tính oxi hóa mạnh nhất trong dãy Cu2+, Ag+, Fe2+, Ni2+ là:', options: ['Cu2+', 'Ni2+', 'Fe2+', 'Ag+'], answer: 'Ag+' },
+    { type: 'single', q: 'Câu 9: Kim loại nhóm IA phản ứng với nước tăng dần theo dãy:', options: ['Na, K, Li', 'K, Na, Li', 'Li, Na, K', 'Li, K, Na'], answer: 'Li, Na, K' },
+    { type: 'single', q: 'Câu 10: Khi pin Zn-Cu hoạt động, nồng độ:', options: ['Cu2+ giảm, Zn2+ tăng', 'Cu2+ tăng, Zn2+ giảm', 'Cu2+ giảm, Zn2+ giảm', 'Cu2+ tăng, Zn2+ tăng'], answer: 'Cu2+ giảm, Zn2+ tăng' },
+    { type: 'single', q: 'Câu 11: Kim loại bị phá hủy chủ yếu do ăn mòn hóa học trong trường hợp:', options: ['Ống gang dưới đất', 'Thép trong lò đốt', 'Vỏ tàu biển', 'Thép ngoài không khí ẩm'], answer: 'Thép trong lò đốt' },
+    { type: 'single', q: 'Câu 12: Tính khử kim loại nhóm IA từ Li đến Cs:', options: ['Tăng dần', 'Không đổi', 'Giảm dần', 'Biến thiên'], answer: 'Tăng dần' },
+    { type: 'single', q: 'Câu 13: Cặp oxi hóa - khử viết đúng là:', options: ['Fe2O3/FeO', 'Cu/Cu2+', '2I-/I2', 'Na+/Na'], answer: 'Na+/Na' },
+    { type: 'single', q: 'Câu 14: Kim loại kiềm mạnh (Li, Na, K) được ngâm trong:', options: ['Cồn', 'Dầu hỏa', 'Giấm', 'Nước'], answer: 'Dầu hỏa' },
+    { type: 'single', q: 'Câu 15: Phát biểu KHÔNG đúng về pin mặt trời:', options: ['Giá rẻ', 'Thân thiện', 'Không ô nhiễm', 'Nguồn sạch'], answer: 'Giá rẻ' },
+    { type: 'single', q: 'Câu 16: Nguyên tắc chung để điều chế kim loại:', options: ['Khử nguyên tử', 'Khử ion', 'Oxi hóa ion', 'Oxi hóa nguyên tử'], answer: 'Khử ion' },
+    { type: 'single', q: 'Câu 17: Kim loại X cứng nhất, dùng mạ dụng cụ là:', options: ['Cr', 'W', 'Ag', 'Fe'], answer: 'Cr' },
+    { type: 'single', q: 'Câu 18: Khuynh hướng của nguyên tử kim loại nhóm IA:', options: ['Nhận 1e', 'Nhường 1e', 'Nhường 2e', 'Nhận 2e'], answer: 'Nhường 1e' },
+    { type: 'single', q: 'Câu 19: Chống ăn mòn bằng phương pháp điện hóa là:', options: ['Sơn cửa', 'Mạ vàng', 'Bôi dầu mỡ', 'Gắn kẽm vào vỏ tàu'], answer: 'Gắn kẽm vào vỏ tàu' },
+    { type: 'single', q: 'Câu 20: Phần lớn sắt tái chế dùng để sản xuất:', options: ['Gang', 'Sắt nguyên chất', 'Thép', 'Hợp kim nhôm'], answer: 'Thép' },
+    { type: 'single', q: 'Câu 21: Tẩy cặn đáy ấm đun nước dùng:', options: ['Đường', 'Cồn', 'Giấm ăn', 'Muối'], answer: 'Giấm ăn' },
+    { type: 'single', q: 'Câu 22: Thép không gỉ làm dụng cụ y tế chứa:', options: ['Carbon thấp', 'Silicon', 'Cr và Ni', 'Carbon cao'], answer: 'Cr và Ni' },
+    { type: 'single', q: 'Câu 23: Vôi tôi dùng làm vật liệu xây dựng có công thức:', options: ['Ca(OH)2', 'NaOH', 'KOH', 'Ba(OH)2'], answer: 'Ca(OH)2' },
+    { type: 'single', q: 'Câu 24: Điện cực chuẩn Cu được thiết lập bằng thanh Cu nhúng vào dd:', options: ['Cu(NO3)2 1M', 'AgNO3', 'NaNO3', 'HNO3'], answer: 'Cu(NO3)2 1M' },
+    { type: 'single', q: 'Câu 25: Kim loại có tính khử mạnh nhất trong dãy (Li, Mg, Zn, Ag) là:', options: ['Li', 'Mg', 'Zn', 'Ag'], answer: 'Li' },
+    { type: 'single', q: 'Câu 26: Dụng cụ nấu ăn bằng kim loại dựa trên tính:', options: ['Ánh kim', 'Tính dẻo', 'Dẫn nhiệt', 'Dẫn điện'], answer: 'Dẫn nhiệt' },
+    { type: 'single', q: 'Câu 27: Công thức Baking soda là:', options: ['NaHCO3', 'Na2SO3', 'Na2CO3', 'NaHSO4'], answer: 'NaHCO3' },
+    { type: 'single', q: 'Câu 28: Nguyên tố nhóm IIA phổ biến nhất vỏ Trái đất:', options: ['Be', 'Mg', 'Ca', 'Ba'], answer: 'Ca' },
+    { type: 'single', q: 'Câu 29: Điện phân NaCl bão hòa có màng ngăn thu được:', options: ['Na, Cl2', 'NaOH, H2, Cl2', 'Na, H2, Cl2', 'NaOH, O2'], answer: 'NaOH, H2, Cl2' },
+    { type: 'single', q: 'Câu 30: Cấu hình electron của Mg (Z=12):', options: ['[Ne]3s1', '[Ne]3s2', '1s2 2s2 2p6', '[Ne]3p2'], answer: '[Ne]3s2' },
+    { type: 'tf', q: 'Câu 31: Muối carbonate nhóm IIA', subQs: ['a) Phản ứng nhiệt phân là toả nhiệt.', 'b) Độ bền nhiệt tăng từ MgCO3 đến BaCO3.', 'c) BaCO3 bắt đầu phân hủy ở 1155°C.', 'd) Nung CaCO3 hoàn toàn khối lượng giảm 44%.'], answers: [false, true, false, true] },
+    { type: 'tf', q: 'Câu 32: Ăn mòn kim loại', subQs: ['a) Sơn cửa sắt là bảo vệ bề mặt.', 'b) Tráng kẽm thép là bảo vệ điện hóa.', 'c) Gắn kẽm vỏ tàu là bảo vệ điện hóa.', 'd) Bôi dầu xích xe là bảo vệ điện hóa.'], answers: [true, true, false, true] },
+    { type: 'tf', q: 'Câu 33: Pin nhiên liệu Methanol', subQs: ['a) Anode diễn ra oxi hóa methanol.', 'b) Cathode diễn ra khử oxygen.', 'c) Tiêu thụ 100kWh cần khoảng 72kg methanol.', 'd) Sản phẩm pin thân thiện môi trường.'], answers: [true, false, true, true] },
+    { type: 'tf', q: 'Câu 34: Đinh sắt trong CuSO4', subQs: ['a) Phản ứng: Fe + Cu2+ -> Fe2+ + Cu.', 'b) Khối lượng đinh m2 < m1.', 'c) Thay kẽm màu xanh nhạt dần.', 'd) Anode xảy ra oxi hóa Cu.'], answers: [false, false, true, false] },
+    { type: 'tf', q: 'Câu 35: Đinh sắt trong H2SO4 loãng', subQs: ['a) Cả hai ống đều có khí thoát ra.', 'b) Ống 2 (thêm CuSO4) khí thoát chậm hơn.', 'c) Ống 2 có ăn mòn điện hóa.', 'd) Thay CuSO4 bằng MgSO4 ống 2 vẫn nhanh.'], answers: [true, false, true, false] }
+];
+
+let timeLeft = 45 * 60;
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+const questions = shuffle([...rawData]);
+const container = document.getElementById('questions');
+questions.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    if (item.type === 'single') {
+        const opts = shuffle([...item.options]);
+        card.innerHTML = `<span class="question-text">${item.q}</span><div id="q-${index}">${opts.map(o => `<label class="option-item"><input type="radio" name="q${index}" value="${o}"><span>${o}</span></label>`).join('')}</div><div id="f-${index}" class="feedback"></div>`;
+    } else {
+        card.innerHTML = `<span class="question-text">${item.q}</span><table class="true-false-table"><tr><th>Ý</th><th>Đ</th><th>S</th></tr>${item.subQs.map((s, si) => `<tr><td align="left">${s}</td><td><input type="radio" name="q${index}_${si}" value="true"></td><td><input type="radio" name="q${index}_${si}" value="false"></td></tr>`).join('')}</table><div id="f-${index}" class="feedback"></div>`;
+    }
+    container.appendChild(card);
+});
+
+const timerNode = document.getElementById('timer');
+setInterval(() => {
+    if (timeLeft <= 0) return;
+    timeLeft--;
+    timerNode.innerText = `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`;
+}, 1000);
+
+function submitQuiz() {
+    let score = 0;
+    questions.forEach((item, i) => {
+        const f = document.getElementById(`f-${i}`);
+        if (item.type === 'single') {
+            const sel = document.querySelector(`input[name="q${i}"]:checked`);
+            if (sel && sel.value === item.answer) {
+                score += (10/35);
+                f.innerHTML = `<span class="correct-text">Đúng!</span>`;
+            } else {
+                f.innerHTML = `<span class="wrong-text">Sai. Đáp án: ${item.answer}</span>`;
+            }
+        } else {
+            let sub = 0;
+            item.subQs.forEach((_, si) => {
+                const s = document.querySelector(`input[name="q${i}_${si}"]:checked`);
+                if (s && s.value === String(item.answers[si])) sub++;
+            });
+            let p = sub===1?0.1:sub===2?0.25:sub===3?0.5:sub===4?1:0;
+            score += p * (10/35);
+            f.innerHTML = `<span class="${sub===4?'correct-text':'wrong-text'}">Đáp án: ${item.answers.map(a=>a?'Đ':'S').join(', ')} (Đúng ${sub}/4)</span>`;
+        }
+    });
+    document.getElementById('score').innerText = score.toFixed(2);
+    document.getElementById('result-display').style.display = 'block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+document.addEventListener('change', () => {
+    let ans = 0;
+    questions.forEach((_, i) => { if(document.querySelector(`input[name^="q${i}"]:checked`)) ans++; });
+    document.getElementById('progress-bar').style.width = (ans/35*100) + '%';
+});
+</script>
+</body>
+</html>
